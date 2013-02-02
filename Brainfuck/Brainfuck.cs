@@ -81,7 +81,7 @@ namespace Brainfuck
                     _instructions[program[instructionPointer]](program, memory, ref instructionPointer, ref memoryPointer, input, ref inputPointer, output);
 
                     instructions++;
-                    if (instructions >= InstructionLimit) {throw new BrainfuckException(program, memory, instructionPointer, memoryPointer, input, inputPointer, output, "Instruction limit reached."); }
+                    if (instructions >= InstructionLimit) { throw new BrainfuckException(program, memory, instructionPointer, memoryPointer, input, inputPointer, output, "Instruction limit reached."); }
 
                     instructionPointer++;
                 }
@@ -162,13 +162,20 @@ namespace Brainfuck
 
             foreach (var method in typeof(Brainfuck).GetMethods(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
             {
-                BrainfuckInstructionAttribute attrib = method.GetCustomAttribute<BrainfuckInstructionAttribute>();
-                if (attrib == null) { continue; }
+                BrainfuckInstructionAttribute attrib;
+                try
+                {
+                    attrib = method
+                        .GetCustomAttributes(typeof(BrainfuckInstructionAttribute), false)
+                        .Cast<BrainfuckInstructionAttribute>()
+                        .Single();
+                }
+                catch { continue; }
 
                 BrainfuckInstruction @delegate;
                 try
                 {
-                    @delegate = (BrainfuckInstruction)method.CreateDelegate(typeof(BrainfuckInstruction));
+                    @delegate = (BrainfuckInstruction)Delegate.CreateDelegate(typeof(BrainfuckInstruction), method);
                 }
                 catch (Exception ex) { throw new InvalidProgramException("Could not create instruction delegate for method " + method.Name, ex); }
 
