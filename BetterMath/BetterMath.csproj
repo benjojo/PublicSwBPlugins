@@ -32,10 +32,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Newtonsoft.Json">
-      <HintPath>..\..\..\..\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\..\..\..\AWMusic\libs\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="SteamKit2">
-      <HintPath>..\..\..\..\Dump\SteamKit2.dll</HintPath>
+      <HintPath>..\..\..\..\..\..\Dropbox\discord\bin\windows\vs2010\SteamKit2.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -48,6 +48,12 @@
   <ItemGroup>
     <Compile Include="Plugin.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\vs2010\core.csproj">
+      <Project>{caaf6c82-27fe-4274-8945-c3162e045726}</Project>
+      <Name>core</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
