@@ -60,6 +60,29 @@ namespace discord.plugins
                 {
                     discord.core.Discord.SendChatMessage(msg.ChatRoomID, "Failed to resolve Spotify 2 YT");
                 }
+                if (msg.Message.Contains("spotify:track:"))
+                {
+                    try
+                    {
+                        string id = msg.Message.Split(':')[2];
+                        id = "http://open.spotify.com/" + id;
+                        Video v = Spotify2Youtube(id);
+                        if (v.Title != "penisdickmassagesthisisauniquestring")
+                        {
+                            discord.core.Discord.SendChatMessage(msg.ChatRoomID, "Spotify -> Youtube: http://youtu.be/" + v.YouTubeID);
+                            //put here code to send to room "http://youtu.be/" + v.YouTubeID
+                        }
+                        else
+                        {
+                            discord.core.Discord.SendChatMessage(msg.ChatRoomID, "Failed to resolve Spotify 2 YT");
+                            //return ":( http://i.imgur.com/QlPUL.gif Because ";
+                        }
+                    }
+                    catch
+                    {
+                        discord.core.Discord.SendChatMessage(msg.ChatRoomID, "Failed to resolve Spotify 2 YT");
+                    }
+                }
             }
         }
         public class Video
