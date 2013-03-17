@@ -36,11 +36,16 @@ namespace discord.plugins
                     string[] mathArgs = new string[args.Length - 2];
                     Array.Copy(args, 2, mathArgs, 0, args.Length - 2);
                     string math = string.Join("", mathArgs);
-                    math = math.Replace("as", "=").Replace("in", "="); //turns 1USD as EUR into 1USD=EUR, or 1GB in KB into 1GB=KB
-                    JObject json = JObject.Parse(new WebClient().DownloadString("http://www.google.com/ig/calculator?hl=en&q=" + System.Uri.EscapeDataString(math)));
+                    math = math.Replace("as", "=").Replace("in", "=").Replace("to", "="); //turns 1USD as EUR into 1USD=EUR, 1GB in KB to 1GB=KB, etc
+                    JObject json = JObject.Parse(
+                        System.Text.RegularExpressions.Regex.Unescape( //Gets rid of the \x26 which kills the JSON parser
+                            new WebClient().DownloadString("http://www.google.com/ig/calculator?hl=en&q=" + System.Uri.EscapeDataString(math))
+                            )
+                    );
                     if (!string.IsNullOrWhiteSpace((string)json["error"]) && (string)json["error"] != "0")
                         discord.core.Discord.SendChatMessage(msg.ChatRoomID, "Cannot compute!");
-                    discord.core.Discord.SendChatMessage(msg.ChatRoomID, json["lhs"] + " = " + json["rhs"]);
+                    else
+                        discord.core.Discord.SendChatMessage(msg.ChatRoomID, json["lhs"] + " = " + System.Net.WebUtility.HtmlDecode(json["rhs"])); //Unescapes the html entities, without a reference to System.Web
                 }
             }
             catch (Exception e)
