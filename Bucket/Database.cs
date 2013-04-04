@@ -24,6 +24,8 @@ namespace discord.plugins
             {
                 conn = new MySqlConnection(discord.core.Discord.GetDBConnectString());
                 conn.Open();
+                var c = new MySqlCommand("SET NAMES utf8;SET CHARACTER SET utf8", conn);
+                c.ExecuteNonQuery();
                 return conn;
             }
 

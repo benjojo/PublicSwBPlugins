@@ -10,6 +10,7 @@ namespace discord.plugins
     public partial class Bucket
     {
         private readonly List<MethodInfo> handlers;
+        private readonly Dictionary<string, MethodInfo> variableHandlers;
         private readonly string prefix;
 
         private readonly Random random = new Random();
@@ -20,25 +21,43 @@ namespace discord.plugins
         public Action<string> DebugOutput;
         public Func<ulong, string> NameFromId;
 
-        public Bucket(string mentionPrefix)
+        public Bucket(string mentionPrefix, Action<string> debugOutput = null)
         {
-            var commands = GetType().GetMethods().Where(m => m.Name.StartsWith("Cmd")).ToList();
-            var regex = new Regex(@"^Cmd(\d+)_([\w\d]*)");
+            prefix = mentionPrefix;
+            DebugOutput = debugOutput;
 
-            var funcs = commands.Where(c => regex.IsMatch(c.Name)).Select(c =>
+            var commands = GetType().GetMethods().ToList();
+
+            // Find handlers
+            var handlerRegex = new Regex(@"^Cmd(\d+)_([\S]*)");
+            var handlerFuncs = commands.Where(c => handlerRegex.IsMatch(c.Name)).Select(c =>
             {
-                var groups = regex.Match(c.Name).Groups;
+                var groups = handlerRegex.Match(c.Name).Groups;
 
                 var priority = int.Parse(groups[1].Value);
                 var name = groups[2].Value;
 
                 return Tuple.Create(c, priority, name);
             }).OrderByDescending(c => c.Item2);
+            handlers = handlerFuncs.Select(c => c.Item1).ToList();
 
-            handlers = funcs.Select(c => c.Item1).ToList();
-            prefix = mentionPrefix;
+            // Find variable handlers
+            var variableRegex = new Regex(@"^Var_(\S+)");
+            var variableFuncs = commands.Where(c => variableRegex.IsMatch(c.Name)).Select(c =>
+            {
+                var groups = variableRegex.Match(c.Name).Groups;
+                var name = groups[1].Value.ToLower();
+                return new KeyValuePair<string, MethodInfo>(name, c);
+            });
 
-            Debug("Found Handlers: " + string.Join(", ", funcs.Select(f => f.Item3)));
+            variableHandlers = new Dictionary<string, MethodInfo>();
+            foreach (var variable in variableFuncs)
+            {
+                variableHandlers.Add(variable.Key, variable.Value);
+            }
+
+            Debug("Found Handlers: " + string.Join(", ", handlerFuncs.Select(f => f.Item3)));
+            Debug("Found Variables: " + string.Join(", ", variableHandlers.Keys));
         }
 
         public void ProcessMessage(ulong sender, string message)
@@ -130,50 +149,42 @@ namespace discord.plugins
                 #region Variable Name Exceptions
                 if (variable == "nouns")
                 {
-                    suffix = "s ";
+                    suffix = "s";
                     variable = "noun";
                 }
                 if (variable == "verbs")
                 {
-                    suffix = "s ";
+                    suffix = "s";
                     variable = "verb";
                 }
                 if (variable == "verbed")
                 {
-                    suffix = "ed ";
+                    suffix = "ed";
                     variable = "verb";
                 }
                 if (variable == "verbing")
                 {
-                    suffix = "ing ";
+                    suffix = "ing";
                     variable = "verb";
                 }
                 #endregion
 
-                var value = " ";
-                var values = Database.GetValues(variable);
+                var value = "";
 
-                if (values.Count > 0)
+                MethodInfo handler;
+                if (variableHandlers.TryGetValue(variable.ToLower(), out handler))
                 {
-                    var idx = random.Next(values.Count);
-                    value = values[idx];
-                    suffix = "";
+                    value = (string)handler.Invoke(this, null);
                 }
                 else
                 {
-                    value = "$" + variable;
-                    suffix = "";
-                }
+                    value = VariableLookup(variable);
 
-                if (variable == "who")
-                {
-                    value = NameFromId(who);
-                }
-
-                if (variable == "someone")
-                {
-                    var id = RecentMessages.Skip(random.Next(RecentMessages.Count)).First().Item1;
-                    value = NameFromId(id);
+                    if (value == null)
+                    {
+                        value = "$" + variable;
+                        suffix = "";
+                    }
                 }
 
                 sb.Append(value);
@@ -189,6 +200,17 @@ namespace discord.plugins
         {
             if (DebugOutput != null)
                 DebugOutput(message);
+        }
+
+        private string VariableLookup(string name)
+        {
+            var values = Database.GetValues(name);
+
+            if (values.Count <= 0)
+                return null;
+
+            var idx = random.Next(values.Count);
+            return values[idx];
         }
     }
 }

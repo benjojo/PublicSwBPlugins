@@ -19,10 +19,20 @@ namespace discord.plugins
          * pass to another handler.
          */
 
+        // List of facts which users should not be able to trigger.
+        private static readonly string[] ReservedFacts = new[]
+        {
+            "band name reply", "tumblr name reply", "don't know", "drops item", "duplicate item",
+            "list items", "pickup full", "takes item"
+        };
+
         public bool Cmd0_FactCheck(ulong sender, string message, bool mention)
         {
             if (!mention && message.Length < 5)
-                return false;
+                return true;
+
+            if (ReservedFacts.Contains(message.ToLower()))
+                return true;
 
             var facts = Database.GetFacts(message);
             if (facts.Count == 0)
@@ -59,7 +69,7 @@ namespace discord.plugins
             {
                 Database.AddFact(fact, tidbit, verb, false);
             }
-            catch (Exception e)
+            catch
             {
                 Say("I already had it that way!");
                 return true;
@@ -85,7 +95,7 @@ namespace discord.plugins
             {
                 Database.AddFact(fact, tidbit, verb, false);
             }
-            catch (Exception e)
+            catch
             {
                 Say("I already had it that way!");
                 return true;

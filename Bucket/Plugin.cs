@@ -44,12 +44,11 @@ namespace discord.plugins
             if (buckets.TryGetValue(chatId, out res))
                 return res;
 
-            res = new Bucket("sb");
+            res = new Bucket("sb", s => Console.WriteLine("[BUCKET] {0}", s));
             res.Output = s =>
             {
                 core.Discord.SendChatMessage(chatId, s);
             };
-            res.DebugOutput = s => Console.WriteLine("[BUCKET] {0}", s);
             res.NameFromId = id => discord.core.Discord.GetUserName(id);
 
             buckets[chatId] = res;
