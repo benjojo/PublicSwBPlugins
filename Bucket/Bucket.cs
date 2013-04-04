@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Bucket
+namespace discord.plugins
 {
     public partial class Bucket
     {
@@ -157,6 +157,11 @@ namespace Bucket
                 {
                     var idx = random.Next(values.Count);
                     value = values[idx];
+                    suffix = "";
+                }
+                else
+                {
+                    value = "$" + variable;
                     suffix = "";
                 }
 

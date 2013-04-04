@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Bucket
+namespace discord.plugins
 {
     public partial class Bucket
     {
