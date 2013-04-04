@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace discord.plugins
+namespace Bucket
 {
     public partial class Bucket
     {
@@ -26,7 +26,17 @@ namespace discord.plugins
 
             var facts = Database.GetFacts(message);
             if (facts.Count == 0)
+            {
+                if (mention)
+                {
+                    facts = Database.GetFacts("don't know");
+                    if (facts.Count > 0)
+                    {
+                        SayFact(facts[random.Next(facts.Count)]);
+                    }
+                }
                 return true;
+            }
 
             var idx = random.Next(facts.Count);
             SayFact(facts[idx]);

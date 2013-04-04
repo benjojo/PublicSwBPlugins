@@ -5,7 +5,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace discord.plugins
+namespace Bucket
 {
     public partial class Bucket
     {
@@ -97,79 +97,62 @@ namespace discord.plugins
 
         private void Say(string message)
         {
-            var words = new LinkedList<string>();
-            foreach (var word in message.Split(' '))
-            {
-                words.AddLast(word);
-            }
+            var str = message;
+            var i = 0;
 
             var sb = new StringBuilder();
 
-            while (words.Count > 0)
+            while (i < str.Length)
             {
-                var word = words.First.Value;
-                words.RemoveFirst();
-
-                if (!word.StartsWith("$"))
+                if (str[i] != '$')
                 {
-                    sb.Append(word);
-                    sb.Append(" ");
+                    sb.Append(str[i++]);
                     continue;
                 }
 
-                // "$"
-                if (word.Length == 1)
+                i++; // skip $
+
+                // double $, print one
+                if (str[i] == '$')
                 {
-                    sb.Append("$ ");
+                    sb.Append(str[i++]);
                     continue;
                 }
 
-                var variable = word.Substring(1);
+                var variable = "";
+                while (i < str.Length && char.IsLetter(str[i]))
+                {
+                    variable += str[i++];
+                }
+
                 var suffix = "";
 
-                // Double $, pretend its escaped
-                if (variable.StartsWith("$"))
-                {
-                    sb.Append(variable);
-                    sb.Append(" ");
-                    continue;
-                }
-
-                var old = variable;
-                variable = variable.TakeWhile(char.IsLetter).BuildString();
-
-                if (old.Length > variable.Length)
-                {
-                    var remain = old.Substring(variable.Length);
-                    words.AddFirst(remain);
-                }
-
                 #region Variable Name Exceptions
-                if (word == "$nouns")
+                if (variable == "nouns")
                 {
                     suffix = "s ";
-                    variable = "$noun";
+                    variable = "noun";
                 }
-                if (word == "$verbs")
+                if (variable == "verbs")
                 {
                     suffix = "s ";
-                    variable = "$verb";
+                    variable = "verb";
                 }
-                if (word == "$verbed")
+                if (variable == "verbed")
                 {
                     suffix = "ed ";
-                    variable = "$verb";
+                    variable = "verb";
                 }
-                if (word == "$verbing")
+                if (variable == "verbing")
                 {
                     suffix = "ing ";
-                    variable = "$verb";
+                    variable = "verb";
                 }
                 #endregion
 
                 var value = " ";
-
                 var values = Database.GetValues(variable);
+
                 if (values.Count > 0)
                 {
                     var idx = random.Next(values.Count);
