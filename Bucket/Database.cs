@@ -60,7 +60,7 @@ namespace discord.plugins
         {
             var cmd = new Command("SELECT vars.id id, name, perms, type, value FROM bucket_vars vars LEFT JOIN bucket_values vals ON vars.id = vals.var_id WHERE name=@variable");
             cmd["@variable"] = variable.ToUtf8();
-            return cmd.Execute().Select(r => (string)r.name).ToList();
+            return cmd.Execute().Select(r => (string)r.value).ToList();
         }
     }
 
