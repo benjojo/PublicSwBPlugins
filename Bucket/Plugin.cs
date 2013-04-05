@@ -19,10 +19,13 @@ namespace discord.plugins
         public String Auth { get { return "Benjojo & Rohan"; } }
 
         private static Dictionary<ulong, Bucket> buckets;
+        private static Dictionary<ulong, string> rohUsers; 
 
         public void Load()
         {
             buckets = new Dictionary<ulong, Bucket>();
+            rohUsers = new Dictionary<ulong, string>();
+
             discord.core.Events.OnChatMsgCallback += new core.ChatMsgEventHandler(Events_OnChatMsgCallbaack);
             Console.WriteLine("Bucket Loaded.");
         }
@@ -34,8 +37,27 @@ namespace discord.plugins
 
         void Events_OnChatMsgCallbaack(SteamFriends.ChatMsgCallback msg)
         {
+            var userId = msg.ChatterID.ConvertToUInt64();
+            var message = msg.Message;
+
+            if (userId == 76561198071890301)
+            {
+                if (msg.Message.StartsWith("["))
+                {
+                    var nameEnd = message.IndexOf(']');
+                    var name = message.Substring(1, nameEnd - 1);
+                    var content = message.Substring(nameEnd + 2);
+
+                    if (!rohUsers.ContainsValue(name))
+                        rohUsers[(ulong)name.GetHashCode()] = name;
+
+                    userId = (ulong)name.GetHashCode();
+                    message = content;
+                }
+            }
+
             var bucket = GetBucket(msg.ChatRoomID);
-            bucket.ProcessMessage(msg.ChatterID.ConvertToUInt64(), msg.Message);
+            bucket.ProcessMessage(userId, message);
         }
 
         private Bucket GetBucket(SteamID chatId)
@@ -45,14 +67,18 @@ namespace discord.plugins
                 return res;
 
             res = new Bucket("sb", s => Console.WriteLine("[BUCKET] {0}", s));
-            res.Output = s =>
-            {
-                core.Discord.SendChatMessage(chatId, s);
-            };
-            res.NameFromId = id => discord.core.Discord.GetUserName(id);
+            res.Output = s => core.Discord.SendChatMessage(chatId, s);
+            res.NameFromId = id => GetNickname(id);
 
             buckets[chatId] = res;
             return res;
+        }
+
+        private string GetNickname(ulong id)
+        {
+            if (rohUsers.ContainsKey(id))
+                return rohUsers[id];
+            return discord.core.Discord.GetUserName(id);
         }
     }
 }
