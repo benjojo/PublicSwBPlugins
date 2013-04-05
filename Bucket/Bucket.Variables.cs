@@ -27,5 +27,11 @@ namespace discord.plugins
         {
             return random.Next(1, 10).ToString();
         }
+
+        // Low latency version of asciidicks.com
+        public string Var_Dick()
+        {
+            return string.Format("8{0}D", new string('=', random.Next(1, 8)));
+        }
     }
 }
