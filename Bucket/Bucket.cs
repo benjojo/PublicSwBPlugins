@@ -16,6 +16,7 @@ namespace discord.plugins
         private readonly Random random = new Random();
 
         private ulong who;
+        private FactRow that;
 
         public Action<string> Output;
         public Action<string> DebugOutput;
@@ -88,6 +89,8 @@ namespace discord.plugins
 
         private void SayFact(FactRow fact)
         {
+            that = fact;
+
             switch (fact.Verb)
             {
                 case "is":
@@ -114,8 +117,11 @@ namespace discord.plugins
             }
         }
 
-        private void Say(string message)
+        private void Say(string message, bool processVariables = true)
         {
+            if (!processVariables)
+                message = message.Replace("$", "$$");
+
             var str = message;
             var i = 0;
 
@@ -169,22 +175,12 @@ namespace discord.plugins
                 }
                 #endregion
 
-                var value = "";
+                var value = VariableLookup(variable);
 
-                MethodInfo handler;
-                if (variableHandlers.TryGetValue(variable.ToLower(), out handler))
+                if (value == null)
                 {
-                    value = (string)handler.Invoke(this, null);
-                }
-                else
-                {
-                    value = VariableLookup(variable);
-
-                    if (value == null)
-                    {
-                        value = "$" + variable;
-                        suffix = "";
-                    }
+                    value = "$" + variable;
+                    suffix = "";
                 }
 
                 sb.Append(value);
@@ -204,13 +200,10 @@ namespace discord.plugins
 
         private string VariableLookup(string name)
         {
-            var values = Database.GetValues(name);
-
-            if (values.Count <= 0)
-                return null;
-
-            var idx = random.Next(values.Count);
-            return values[idx];
+            MethodInfo handler;
+            if (variableHandlers.TryGetValue(name.ToLower(), out handler))
+                return (string)handler.Invoke(this, null);
+            return DbHelper.GetValue(name);
         }
     }
 }

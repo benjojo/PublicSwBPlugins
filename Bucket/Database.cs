@@ -37,33 +37,6 @@ namespace discord.plugins
         {
             Connections.Add(conn);
         }
-
-        public static void AddFact(string fact, string tidbit, string verb, bool protect, bool re = false, byte? mood = null, byte? chance = null)
-        {
-            var cmd = new Command("INSERT INTO bucket_facts (fact,tidbit,verb,RE,protected,mood,chance) VALUES (@fact,@tidbit,@verb,@RE,@protected,@mood,@chance)");
-            cmd["@fact"] = fact.ToUtf8();
-            cmd["@tidbit"] = tidbit.ToUtf8();
-            cmd["@verb"] = verb.ToUtf8();
-            cmd["@RE"] = re;
-            cmd["@protected"] = protect;
-            cmd["@mood"] = mood;
-            cmd["@chance"] = chance;
-            cmd.ExecuteNonQuery();
-        }
-
-        public static List<FactRow> GetFacts(string fact)
-        {
-            var cmd = new Command("SELECT * FROM bucket_facts WHERE fact=@fact");
-            cmd["@fact"] = fact.ToUtf8();
-            return cmd.Execute().Select(r => new FactRow(r)).ToList();
-        }
-
-        public static List<string> GetValues(string variable)
-        {
-            var cmd = new Command("SELECT vars.id id, name, perms, type, value FROM bucket_vars vars LEFT JOIN bucket_values vals ON vars.id = vals.var_id WHERE name=@variable");
-            cmd["@variable"] = variable.ToUtf8();
-            return cmd.Execute().Select(r => (string)r.value).ToList();
-        }
     }
 
     class Command
