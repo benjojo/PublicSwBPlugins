@@ -56,7 +56,7 @@ namespace discord.plugins
             return true;
         }
 
-        private static readonly Regex IsAreRule = new Regex(@"(.*?) (is|are) (.*)");
+        /*private static readonly Regex IsAreRule = new Regex(@"(.*?) (is|are) (.*)");
         public bool Cmd45_TeachIsAre(ulong sender, string message, bool mention)
         {
             if (!mention || !IsAreRule.IsMatch(message))
@@ -79,7 +79,7 @@ namespace discord.plugins
 
             Say("Okay, $who!");
             return true;
-        }
+        }*/
 
         private static readonly Regex VerbRule = new Regex(@"(.*?)\s*(<\S+>)\s*(.*)");
         public bool Cmd50_TeachVerb(ulong sender, string message, bool mention)

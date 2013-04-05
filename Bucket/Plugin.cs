@@ -18,11 +18,11 @@ namespace discord.plugins
         public String Desc { get { return "Factoid Engine"; } }
         public String Auth { get { return "Benjojo & Rohan"; } }
 
-        private static Dictionary<SteamID, Bucket> buckets;
+        private static Dictionary<ulong, Bucket> buckets;
 
         public void Load()
         {
-            buckets = new Dictionary<SteamID, Bucket>();
+            buckets = new Dictionary<ulong, Bucket>();
             discord.core.Events.OnChatMsgCallback += new core.ChatMsgEventHandler(Events_OnChatMsgCallbaack);
             Console.WriteLine("Bucket Loaded.");
         }
@@ -41,7 +41,7 @@ namespace discord.plugins
         private Bucket GetBucket(SteamID chatId)
         {
             Bucket res;
-            if (buckets.TryGetValue(chatId, out res))
+            if (buckets.TryGetValue(chatId.ConvertToUInt64(), out res))
                 return res;
 
             res = new Bucket("sb", s => Console.WriteLine("[BUCKET] {0}", s));
