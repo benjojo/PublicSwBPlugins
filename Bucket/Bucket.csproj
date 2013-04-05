@@ -54,6 +54,7 @@
   <ItemGroup>
     <Compile Include="Bucket.cs" />
     <Compile Include="Bucket.Handlers.cs" />
+	<Compile Include="Bucket.Variables.cs" />
     <Compile Include="Database.cs" />
     <Compile Include="Objects.cs" />
     <Compile Include="Plugin.cs" />
