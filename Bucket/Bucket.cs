@@ -61,32 +61,47 @@ namespace discord.plugins
             Debug("Found Variables: " + string.Join(", ", variableHandlers.Keys));
         }
 
+        public bool IsReservedFunction(string msg)
+        {
+            msg = msg.ToLower();
+            string[] Commands = new string[] { "last","lookup","info","weather","sql","add","weather","wether","clop","math","rmath","define" };
+            foreach (string Command in Commands)
+            {
+                if (msg.StartsWith("sb " + Command))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
         public void ProcessMessage(ulong sender, string message)
         {
             who = sender;
             message = message.Trim();
-
-            var mention = false;
-            if (message.StartsWith(prefix))
+            if (!IsReservedFunction(message))
             {
-                mention = true;
-                message = message.Substring(prefix.Length).Trim();
-            }
+                var mention = false;
+                if (message.StartsWith(prefix))
+                {
+                    mention = true;
+                    message = message.Substring(prefix.Length).Trim();
+                }
 
-            if (message.Length == 0)
-                return;
-
-            var parameters = new object[]
-            {
-                sender, message, mention
-            };
-
-            foreach (var handler in handlers)
-            {
-                if ((bool)handler.Invoke(this, parameters))
+                if (message.Length == 0)
                     return;
-            }
 
+                var parameters = new object[]
+                {
+                sender, message, mention
+                };
+
+                foreach (var handler in handlers)
+                {
+                    if ((bool)handler.Invoke(this, parameters))
+                        return;
+                }
+            }
             Debug("No matching handler");
         }
 
