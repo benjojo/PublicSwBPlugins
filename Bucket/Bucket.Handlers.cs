@@ -31,7 +31,7 @@ namespace discord.plugins
 
         public bool Cmd0_FactCheck(ulong sender, string message, bool mention)
         {
-            if (!mention && message.Length <= 4)
+            if (message.Length == 0 || (!mention && message.Length <= 4))
                 return true;
 
             if (ReservedFacts.Contains(message.ToLower()))
@@ -66,6 +66,12 @@ namespace discord.plugins
             var fact = groups[1].Value;
             var verb = groups[2].Value;
             var tidbit = groups[3].Value;
+            
+            if (fact.Length == 0 || tidbit.Length == 0)
+            {
+                Say("Why would you want me to remember nothing?");
+                return true;
+            }
 
             try
             {
@@ -91,6 +97,12 @@ namespace discord.plugins
             var fact = groups[1].Value;
             var verb = groups[2].Value;
             var tidbit = groups[3].Value;
+
+            if (fact.Length == 0 || tidbit.Length == 0)
+            {
+                Say("Why would you want me to remember nothing?");
+                return true;
+            }
 
             try
             {

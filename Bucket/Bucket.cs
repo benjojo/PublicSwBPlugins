@@ -73,6 +73,9 @@ namespace discord.plugins
                 message = message.Substring(prefix.Length).Trim();
             }
 
+            if (message.Length == 0)
+                return;
+
             var parameters = new object[]
             {
                 sender, message, mention
