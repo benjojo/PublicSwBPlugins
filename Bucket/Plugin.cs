@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using System.IO;
 using System.Text.RegularExpressions;
@@ -19,7 +20,7 @@ namespace discord.plugins
         public String Auth { get { return "Benjojo & Rohan"; } }
 
         private static Dictionary<ulong, Bucket> buckets;
-        private static Dictionary<ulong, string> rohUsers; 
+        private static Dictionary<ulong, string> rohUsers;
 
         public void Load()
         {
@@ -39,6 +40,9 @@ namespace discord.plugins
         {
             var userId = msg.ChatterID.ConvertToUInt64();
             var message = msg.Message;
+
+            if (IsReservedFunction(message))
+                return;
 
             if (userId == 76561198071890301)
             {
@@ -79,6 +83,13 @@ namespace discord.plugins
             if (rohUsers.ContainsKey(id))
                 return rohUsers[id];
             return discord.core.Discord.GetUserName(id);
+        }
+
+        private static readonly string[] ReservedCommands = new[] { "last", "lookup", "info", "weather", "sql", "add definition", "weather", "wether", "clop", "math", "rmath", "define" };
+        public static bool IsReservedFunction(string msg)
+        {
+            msg = msg.ToLower();
+            return ReservedCommands.Any(str => msg.StartsWith("sb " + str));
         }
     }
 }
