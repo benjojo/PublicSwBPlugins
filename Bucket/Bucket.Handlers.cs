@@ -104,6 +104,12 @@ namespace discord.plugins
                 return true;
             }
 
+            if (verb == "<web>" && !DbHelper.GetPermissions(sender).HasFlag(Permissions.Trusted))
+            {
+                Say(BadPermissions);
+                return true;
+            }
+
             try
             {
                 DbHelper.AddFact(fact, tidbit, verb, false);

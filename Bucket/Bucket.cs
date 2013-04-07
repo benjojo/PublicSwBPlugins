@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -117,6 +118,10 @@ namespace discord.plugins
                 case "<'s>":
                     Say(string.Format("{0}'s {1}", fact.Fact, fact.Tidbit));
                     break;
+
+                /*case "<web>":
+                    Say(DownloadPage(fact.Tidbit));
+                    break;*/
             }
         }
 
@@ -148,9 +153,19 @@ namespace discord.plugins
                 }
 
                 var variable = "";
+                var parameters = "";
                 while (i < str.Length && char.IsLetter(str[i]))
                 {
                     variable += str[i++];
+                }
+                if (i < str.Length && str[i] == '{')
+                {
+                    i++; // skip {
+                    while (i < str.Length && str[i] != '}')
+                    {
+                        parameters += str[i++];
+                    }
+                    i++; // skip }
                 }
 
                 var suffix = "";
@@ -178,7 +193,7 @@ namespace discord.plugins
                 }
                 #endregion
 
-                var value = VariableLookup(variable);
+                var value = VariableLookup(variable, parameters);
 
                 if (value == null)
                 {
@@ -201,12 +216,24 @@ namespace discord.plugins
                 DebugOutput(message);
         }
 
-        private string VariableLookup(string name)
+        private string VariableLookup(string name, string parameters)
         {
             MethodInfo handler;
             if (variableHandlers.TryGetValue(name.ToLower(), out handler))
-                return (string)handler.Invoke(this, null);
+                return (string)handler.Invoke(this, new[] { parameters });
             return DbHelper.GetValue(name);
+        }
+
+        private static string DownloadPage(string uri)
+        {
+            try
+            {
+                return new WebClient().DownloadString(new Uri(uri));
+            }
+            catch
+            {
+                return ":(";
+            }
         }
     }
 }
