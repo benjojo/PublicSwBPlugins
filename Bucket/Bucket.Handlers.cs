@@ -462,14 +462,14 @@ namespace discord.plugins
             return true;
         }
 
-        private static readonly LinkedList<Tuple<ulong, string>> RecentMessages = new LinkedList<Tuple<ulong, string>>();
-        public bool Cmd1000_RecentMessages(ulong sender, string message, bool mention)
+        private static readonly LinkedList<ulong> RecentPosters = new LinkedList<ulong>();
+        public bool Cmd1000_RecentPosters(ulong sender, string message, bool mention)
         {
-            if (mention)
+            if (RecentPosters.Contains(sender))
                 return false;
-            if (RecentMessages.Count > 50)
-                RecentMessages.RemoveFirst();
-            RecentMessages.AddLast(Tuple.Create(sender, message));
+            if (RecentPosters.Count > 10)
+                RecentPosters.RemoveFirst();
+            RecentPosters.AddLast(sender);
             return false;
         }
     }

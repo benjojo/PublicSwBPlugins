@@ -153,7 +153,7 @@ namespace discord.plugins
                 }
 
                 var variable = "";
-                var parameters = "";
+                string parameters = null;
                 while (i < str.Length && char.IsLetter(str[i]))
                 {
                     variable += str[i++];
@@ -161,6 +161,7 @@ namespace discord.plugins
                 if (i < str.Length && str[i] == '{')
                 {
                     i++; // skip {
+                    parameters = "";
                     while (i < str.Length && str[i] != '}')
                     {
                         parameters += str[i++];
@@ -197,7 +198,7 @@ namespace discord.plugins
 
                 if (value == null)
                 {
-                    value = "$" + variable;
+                    value = "$" + variable + (parameters != null ? "{" + parameters + "}" : "");
                     suffix = "";
                 }
 

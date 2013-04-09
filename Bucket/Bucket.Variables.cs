@@ -17,7 +17,7 @@ namespace discord.plugins
 
         public string Var_Someone(string parameters)
         {
-            var id = RecentMessages.Skip(random.Next(RecentMessages.Count)).First().Item1;
+            var id = RecentPosters.Skip(random.Next(RecentPosters.Count)).First();
             return NameFromId(id);
         }
 
@@ -39,7 +39,14 @@ namespace discord.plugins
 
         public string Var_Tumblr(string parameters)
         {
-            var uri = string.Format("http://api.tumblr.com/v2/tagged?api_key=fuiKNFp9vQFvjLNvx4sUwti4Yb5yGutBN4Xh10LXZhhRKjWlV4&limit=50&tag={0}", HttpUtility.UrlEncode(parameters));
+            if (parameters == null)
+                return null; // needs parameters
+
+            const string tumblrTaggedUri = "http://api.tumblr.com/v2/tagged?api_key=fuiKNFp9vQFvjLNvx4sUwti4Yb5yGutBN4Xh10LXZhhRKjWlV4&limit=50&before={1}&tag={0}";
+            const int timeRange = 2 * 7 * 24 * 60 * 60; // two weeks
+
+            var time = Util.GetCurrentUnixTimestamp() - random.Next(timeRange);
+            var uri = string.Format(tumblrTaggedUri, HttpUtility.UrlEncode(parameters), time);
             var response = DownloadPage(uri);
 
             try
