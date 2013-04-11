@@ -17,7 +17,7 @@ namespace discord.plugins
 
         public string Var_Someone(string parameters)
         {
-            var id = RecentPosters.Skip(random.Next(RecentPosters.Count)).First();
+            var id = recentPosters.Skip(random.Next(recentPosters.Count)).First();
             return NameFromId(id);
         }
 

@@ -34,7 +34,7 @@ namespace discord.plugins
             if (message.Length == 0)
                 return true;
 
-            var words = message.Split(new[] { " " }, StringSplitOptions.RemoveEmptyEntries);
+            var words = message.Split(new[] {" "}, StringSplitOptions.RemoveEmptyEntries);
             if (!mention && words.Length < 2)
                 return true;
 
@@ -552,14 +552,14 @@ namespace discord.plugins
             return true;
         }
 
-        private static readonly LinkedList<ulong> RecentPosters = new LinkedList<ulong>();
+        private readonly LinkedList<ulong> recentPosters = new LinkedList<ulong>();
         public bool Cmd1000_RecentPosters(ulong sender, string message, bool mention)
         {
-            if (RecentPosters.Contains(sender))
+            if (recentPosters.Contains(sender))
                 return false;
-            if (RecentPosters.Count > 10)
-                RecentPosters.RemoveFirst();
-            RecentPosters.AddLast(sender);
+            if (recentPosters.Count > 10)
+                recentPosters.RemoveFirst();
+            recentPosters.AddLast(sender);
             return false;
         }
     }
