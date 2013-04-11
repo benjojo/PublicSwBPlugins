@@ -36,6 +36,11 @@ namespace discord.plugins
             discord.core.Events.OnChatMsgCallback -= new core.ChatMsgEventHandler(Events_OnChatMsgCallbaack);
         }
 
+        private static readonly List<ulong> Ignored = new List<ulong>()
+        {
+            76561198060797164 // ScootaBorg
+        };
+
         void Events_OnChatMsgCallbaack(SteamFriends.ChatMsgCallback msg)
         {
             var userId = msg.ChatterID.ConvertToUInt64();
@@ -59,6 +64,9 @@ namespace discord.plugins
                     message = content;
                 }
             }
+
+            if (Ignored.Contains(userId))
+                return;
 
             var bucket = GetBucket(msg.ChatRoomID);
             bucket.ProcessMessage(userId, message);
