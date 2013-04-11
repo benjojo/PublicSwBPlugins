@@ -56,11 +56,11 @@ namespace discord.plugins
                     var nameEnd = message.IndexOf(']');
                     var name = message.Substring(1, nameEnd - 1);
                     var content = message.Substring(nameEnd + 2);
+                    userId = (ulong)Math.Abs(name.GetHashCode());
 
                     if (!rohUsers.ContainsValue(name))
-                        rohUsers[(ulong)name.GetHashCode()] = name;
+                        rohUsers[userId] = name;
 
-                    userId = (ulong)name.GetHashCode();
                     message = content;
                 }
             }
