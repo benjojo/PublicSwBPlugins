@@ -31,7 +31,11 @@ namespace discord.plugins
 
         public bool Cmd0_FactCheck(ulong sender, string message, bool mention)
         {
-            if (message.Length == 0 || (!mention && message.Length <= 4))
+            if (message.Length == 0)
+                return true;
+
+            var words = message.Split(new[] { " " }, StringSplitOptions.RemoveEmptyEntries);
+            if (!mention && words.Length < 2)
                 return true;
 
             if (ReservedFacts.Contains(message.ToLower()))
@@ -104,15 +108,28 @@ namespace discord.plugins
                 return true;
             }
 
-            if (verb == "<web>" && !DbHelper.GetPermissions(sender).HasFlag(Permissions.Trusted))
+            var permissions = DbHelper.GetPermissions(sender);
+            if (permissions.HasFlag(Permissions.Banned) || (verb == "<web>" && !permissions.HasFlag(Permissions.Trusted)))
             {
                 Say(BadPermissions);
                 return true;
             }
 
+            var existingFacts = DbHelper.GetFacts(fact);
+            var protect = false;
+            if (existingFacts.Any(f => f.Protected))
+            {
+                protect = true;
+                if (!DbHelper.GetPermissions(sender).HasFlag(Permissions.Trusted))
+                {
+                    Say("You aren't qualified to change that.");
+                    return true;
+                }
+            }
+
             try
             {
-                DbHelper.AddFact(fact, tidbit, verb, false);
+                DbHelper.AddFact(who, fact, tidbit, verb, protect);
             }
             catch
             {
@@ -151,11 +168,11 @@ namespace discord.plugins
                 return true;
             }
 
-            Say(string.Format("That was {0}(#{1}) {2} {3}", that.Fact, that.Id, that.Verb, that.Tidbit), false);
+            Say(string.Format("That was: {0}(#{1}, by {4}) {2} {3}", that.Fact, that.Id, that.Verb, that.Tidbit, that.SteamId), false);
             return true;
         }
 
-        private static readonly Regex ForgetXRule = new Regex(@"forget (.*)");
+        private static readonly Regex ForgetXRule = new Regex(@"^forget (.*)");
         public bool Cmd55_Forget(ulong sender, string message, bool mention)
         {
             if (!mention || !ForgetXRule.IsMatch(message))
@@ -195,7 +212,7 @@ namespace discord.plugins
             }
         }
 
-        private static readonly Regex DeleteNRule = new Regex(@"delete #(.*)");
+        private static readonly Regex DeleteNRule = new Regex(@"^delete #(.*)");
         public bool Cmd55_DeleteN(ulong sender, string message, bool mention)
         {
             if (!mention || !DeleteNRule.IsMatch(message))
@@ -231,7 +248,7 @@ namespace discord.plugins
             return true;
         }
 
-        private static readonly Regex DeleteXRule = new Regex(@"delete (.*)");
+        private static readonly Regex DeleteXRule = new Regex(@"^delete (.*)");
         public bool Cmd55_DeleteX(ulong sender, string message, bool mention)
         {
             if (!mention || !DeleteXRule.IsMatch(message))
@@ -264,7 +281,7 @@ namespace discord.plugins
             return false;
         }
 
-        public static readonly Regex CreateVarRule = new Regex(@"create var (.*)");
+        public static readonly Regex CreateVarRule = new Regex(@"^create var (.*)");
         public bool Cmd60_CreateVar(ulong sender, string message, bool mention)
         {
             if (!mention || !CreateVarRule.IsMatch(message))
@@ -294,7 +311,7 @@ namespace discord.plugins
                 return true;
             }
 
-            cmd = new Command("INSERT INTO bucket_vars (name, perms, type) VALUES (@name, '', 'var')");
+            cmd = new Command("INSERT INTO bucket_vars (name, perms, type) VALUES (@name, 'read-only', 'var')");
             cmd["@name"] = name.ToUtf8();
             cmd.ExecuteNonQuery();
 
@@ -302,7 +319,7 @@ namespace discord.plugins
             return true;
         }
 
-        public static readonly Regex DeleteVarRule = new Regex(@"delete var (.*)");
+        public static readonly Regex DeleteVarRule = new Regex(@"^delete var (.*)");
         public bool Cmd60_DeleteVar(ulong sender, string message, bool mention)
         {
             if (!mention || !DeleteVarRule.IsMatch(message))
@@ -346,7 +363,7 @@ namespace discord.plugins
             return true;
         }
 
-        public static readonly Regex AddValueRule = new Regex(@"add value (\S+) (.*)");
+        public static readonly Regex AddValueRule = new Regex(@"^add value (\S+) (.*)");
         public bool Cmd60_AddValue(ulong sender, string message, bool mention)
         {
             if (!mention || !AddValueRule.IsMatch(message))
@@ -404,7 +421,7 @@ namespace discord.plugins
             return true;
         }
 
-        public static readonly Regex RemoveValueRule = new Regex(@"remove value (\S+) (.*)");
+        public static readonly Regex RemoveValueRule = new Regex(@"^remove value (\S+) (.*)");
         public bool Cmd60_RemoveValue(ulong sender, string message, bool mention)
         {
             if (!mention || !RemoveValueRule.IsMatch(message))
@@ -457,6 +474,79 @@ namespace discord.plugins
             cmd["@id"] = (uint)variable.id;
             cmd["@value"] = value.ToUtf8();
             cmd.ExecuteNonQuery();
+
+            Say(Success);
+            return true;
+        }
+
+        public static readonly Regex PermissionsRule = new Regex(@"^permissions (\d*) (\d*)");
+        public bool Cmd60_Permissions(ulong sender, string message, bool mention)
+        {
+            if (!mention || !PermissionsRule.IsMatch(message))
+                return false;
+
+            if (!DbHelper.GetPermissions(sender).HasFlag(Permissions.ModifyPermissions))
+            {
+                Say(BadPermissions);
+                return true;
+            }
+
+            var groups = PermissionsRule.Match(message).Groups;
+
+            ulong steamId;
+            ushort value;
+            if (!ulong.TryParse(groups[1].Value, out steamId) || !ushort.TryParse(groups[2].Value, out value))
+            {
+                Say("I probably would if you gave me valid parameters.");
+                return true;
+            }
+
+            var cmd = new Command("INSERT INTO bucket_users (SteamID,AuthLevel) VALUES(@SteamID,@AuthLevel) ON DUPLICATE KEY UPDATE AuthLevel=@AuthLevel");
+            cmd["@SteamID"] = steamId;
+            cmd["@AuthLevel"] = value;
+            cmd.ExecuteNonQuery();
+
+            Say(Success);
+            return true;
+        }
+
+        public static readonly Regex ProtectRule = new Regex(@"^protect (.*)");
+        public bool Cmd60_Protect(ulong sender, string message, bool mention)
+        {
+            if (!mention || !ProtectRule.IsMatch(message))
+                return false;
+
+            if (!DbHelper.GetPermissions(sender).HasFlag(Permissions.Trusted))
+            {
+                Say(BadPermissions);
+                return true;
+            }
+
+            var groups = ProtectRule.Match(message).Groups;
+            var fact = groups[1].Value;
+
+            DbHelper.ProtectFact(fact, true);
+
+            Say(Success);
+            return true;
+        }
+
+        public static readonly Regex UnprotectRule = new Regex(@"^unprotect (.*)");
+        public bool Cmd60_Unprotect(ulong sender, string message, bool mention)
+        {
+            if (!mention || !UnprotectRule.IsMatch(message))
+                return false;
+
+            if (!DbHelper.GetPermissions(sender).HasFlag(Permissions.Trusted))
+            {
+                Say(BadPermissions);
+                return true;
+            }
+
+            var groups = UnprotectRule.Match(message).Groups;
+            var fact = groups[1].Value;
+
+            DbHelper.ProtectFact(fact, false);
 
             Say(Success);
             return true;

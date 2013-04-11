@@ -9,7 +9,8 @@ namespace discord.plugins
     public enum Permissions : ushort
     {
         Trusted = 1,
-        ModifyTrusted = 2,
+        ModifyPermissions = 2,
+        Banned = 4,
 
         None = 0,
         All = ushort.MaxValue
@@ -17,9 +18,10 @@ namespace discord.plugins
 
     public static class DbHelper
     {
-        public static void AddFact(string fact, string tidbit, string verb, bool protect, bool re = false, byte? mood = null, byte? chance = null)
+        public static void AddFact(ulong steamId, string fact, string tidbit, string verb, bool protect, bool re = false, byte? mood = null, byte? chance = null)
         {
-            var cmd = new Command("INSERT INTO bucket_facts (fact,tidbit,verb,RE,protected,mood,chance) VALUES (@fact,@tidbit,@verb,@RE,@protected,@mood,@chance)");
+            var cmd = new Command("INSERT INTO bucket_facts (SteamID,fact,tidbit,verb,RE,protected,mood,chance) VALUES (@steamid,@fact,@tidbit,@verb,@RE,@protected,@mood,@chance)");
+            cmd["@steamid"] = steamId;
             cmd["@fact"] = fact.ToUtf8();
             cmd["@tidbit"] = tidbit.ToUtf8();
             cmd["@verb"] = verb.ToUtf8();
@@ -60,6 +62,14 @@ namespace discord.plugins
             if (perms.Count == 0)
                 return Permissions.None;
             return (Permissions)perms[0].AuthLevel;
+        }
+
+        public static void ProtectFact(string fact, bool protect)
+        {
+            var cmd = new Command("UPDATE bucket_facts SET protected=@protect WHERE fact=@fact");
+            cmd["@fact"] = fact.ToUtf8();
+            cmd["@protect"] = protect;
+            cmd.ExecuteNonQuery();
         }
     }
 }

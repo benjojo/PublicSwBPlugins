@@ -70,6 +70,7 @@ namespace discord.plugins
             if (buckets.TryGetValue(chatId.ConvertToUInt64(), out res))
                 return res;
 
+            Console.WriteLine("[BUCKET] Creating Bucket instance for {0}", chatId.ConvertToUInt64());
             res = new Bucket("sb", s => Console.WriteLine("[BUCKET] {0}", s));
             res.Output = s => core.Discord.SendChatMessage(chatId, s);
             res.NameFromId = id => GetNickname(id);

@@ -71,5 +71,65 @@ namespace discord.plugins
                 return ":(";
             }
         }
+
+        #region Top Secret Austech Similator 2013
+        private static readonly char[] RoflLetters = new[] { 'R', 'O', 'F', 'L' };
+        private static readonly Dictionary<char, string[]> RoflTypos = new Dictionary<char, string[]>()
+        {
+            { 'R', new[] { "TR", "E" } },
+            { 'O', new[] { "OP", "P" } },
+            { 'F', new[] { "D" } },
+            { 'L', new[] { "KL" } }
+        };
+        public string Var_Rofl(string parameters)
+        {
+            var funnyness = random.Next(4);
+
+            switch (funnyness)
+            {
+                case 0:
+                    return "rofl";
+
+                case 1:
+                    {
+                        var subType0 = random.Next(2);
+                        switch (subType0)
+                        {
+                            case 0:
+                                return "ROFL";
+                            case 1:
+                                return "ROFl";
+                        }
+                        break;
+                    }
+
+                case 2:
+                    return string.Format("R{0}F{1}", new string('O', random.Next(5, 18)), random.Next(2) == 0 ? "L" : "l");
+
+                case 3:
+                    {
+                        var current = random.Next(2);
+                        var res = "";
+                        var len = random.Next(8, 24);
+                        for (var i = 0; i < len; i++)
+                        {
+                            var c = RoflLetters[current];
+                            current += random.Next(1, 3);
+                            current %= RoflLetters.Length;
+                            var press = "" + c;
+                            if (random.NextDouble() > 0.95)
+                            {
+                                var typos = RoflTypos[c];
+                                press = typos[random.Next(typos.Length)];
+                            }
+                            res += press;
+                        }
+                        return res;
+                    }
+            }
+
+            return "TOO FUNNY";
+        }
+        #endregion
     }
 }
