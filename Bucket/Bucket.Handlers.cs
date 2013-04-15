@@ -97,7 +97,7 @@ namespace discord.plugins
             "<is>",
             "are",
             "<are>",
-            "<reply",
+            "<reply>",
             "<action>",
             "<'s>",
             "<web>"
