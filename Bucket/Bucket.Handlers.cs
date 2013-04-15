@@ -91,6 +91,17 @@ namespace discord.plugins
             return true;
         }*/
 
+        private static readonly List<string> AllowedVerbs = new List<string>()
+        {
+            "is",
+            "<is>",
+            "are",
+            "<are>",
+            "<reply",
+            "<action>",
+            "<'s>",
+            "<web>"
+        };
         private static readonly Regex VerbRule = new Regex(@"(.*?)\s*(<\S+>)\s*(.*)");
         public bool Cmd50_TeachVerb(ulong sender, string message, bool mention)
         {
@@ -105,6 +116,12 @@ namespace discord.plugins
             if (fact.Length == 0 || tidbit.Length == 0)
             {
                 Say("Why would you want me to remember nothing?");
+                return true;
+            }
+
+            if (!AllowedVerbs.Contains(verb))
+            {
+                Say("I wouldn't know what do do with that.");
                 return true;
             }
 
@@ -395,12 +412,6 @@ namespace discord.plugins
                 return true;
             }
 
-            if ((string)variable.perms == "read-only")
-            {
-                Say("I can't modify that variable.");
-                return true;
-            }
-
             cmd = new Command("SELECT * FROM bucket_values WHERE var_id=@id AND value=@value");
             cmd["@id"] = (uint)variable.id;
             cmd["@value"] = value.ToUtf8();
@@ -450,12 +461,6 @@ namespace discord.plugins
             if (variable == null)
             {
                 Say("That variable doesn't even exist!");
-                return true;
-            }
-
-            if ((string)variable.perms == "read-only")
-            {
-                Say("I can't modify that variable.");
                 return true;
             }
 

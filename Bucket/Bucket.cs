@@ -127,10 +127,17 @@ namespace discord.plugins
 
         private void Say(string message, bool processVariables = true)
         {
-            if (!processVariables)
-                message = message.Replace("$", "$$");
+            if (processVariables)
+                message = ProcessVariables(message);
 
-            var str = message;
+            message = PostProcessAn(message);
+
+            Output(message);
+        }
+
+        private const int MaxRecursion = 2;
+        private string ProcessVariables(string str, int recursion = 0)
+        {
             var i = 0;
 
             var sb = new StringBuilder();
@@ -194,21 +201,23 @@ namespace discord.plugins
                 }
                 #endregion
 
-                var value = VariableLookup(variable, parameters);
+                var value = recursion < MaxRecursion ? VariableLookup(variable, parameters) : null;
 
                 if (value == null)
                 {
                     value = "$" + variable + (parameters != null ? "{" + parameters + "}" : "");
                     suffix = "";
                 }
+                else
+                {
+                    value = ProcessVariables(value, recursion + 1);
+                }
 
                 sb.Append(value);
                 sb.Append(suffix);
             }
 
-            message = sb.ToString().Trim();
-
-            Output(message);
+            return sb.ToString().Trim();
         }
 
         private void Debug(string message)
@@ -235,6 +244,41 @@ namespace discord.plugins
             {
                 return ":(";
             }
+        }
+
+        private string PostProcessAn(string message)
+        {
+            var words = message.Split(' ');
+            var res = new StringBuilder();
+
+            for (var i = 0; i < words.Length; i++)
+            {
+                var w = words[i].ToLower();
+                if ((w == "a" || w == "an") && i < words.Length - 1 && words[i + 1].Length > 0)
+                {
+                    var useAn = "aeiouAEIOU".Contains(words[i + 1][0]);
+                    res.Append(PreserveCase(words[i], useAn ? "an" : "a") + " ");
+                    Debug(string.Format("Replacing '{0}' with '{1}'", words[i], PreserveCase(words[i], useAn ? "an" : "a")));
+                    continue;
+                }
+
+                res.Append(words[i] + " ");
+            }
+
+            Debug(res.ToString());
+            return res.ToString();
+        }
+
+        private static string PreserveCase(string original, string output)
+        {
+            if (string.IsNullOrEmpty(original))
+                return output;
+
+            var firstUpper = char.IsUpper(original[0]);
+            if (firstUpper && !string.IsNullOrEmpty(output))
+                return char.ToUpper(output[0]) + output.Substring(1);
+
+            return output;
         }
     }
 }
