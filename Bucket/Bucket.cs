@@ -258,14 +258,12 @@ namespace discord.plugins
                 {
                     var useAn = "aeiouAEIOU".Contains(words[i + 1][0]);
                     res.Append(PreserveCase(words[i], useAn ? "an" : "a") + " ");
-                    Debug(string.Format("Replacing '{0}' with '{1}'", words[i], PreserveCase(words[i], useAn ? "an" : "a")));
                     continue;
                 }
 
                 res.Append(words[i] + " ");
             }
 
-            Debug(res.ToString());
             return res.ToString();
         }
 
