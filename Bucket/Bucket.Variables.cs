@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -10,34 +11,64 @@ namespace discord.plugins
 {
     public partial class Bucket
     {
-        public string Var_Who(string parameters)
+        public string Var_Who(dynamic context, string parameters)
         {
             return NameFromId(who);
         }
 
-        public string Var_Someone(string parameters)
+        public string Var_Someone(dynamic context, string parameters)
         {
-            var id = recentPosters.Skip(random.Next(recentPosters.Count)).First();
+            Dictionary<string, ulong> channels;
+            try
+            {
+                channels = context.Someone;
+            }
+            catch
+            {
+                channels = new Dictionary<string, ulong>();
+                context.Someone = channels;
+            }
+
+            ulong id;
+            if (parameters != null && channels.TryGetValue(parameters, out id))
+            {
+                return NameFromId(id);
+            }
+
+            try
+            {
+                if (parameters != null)
+                    id = recentPosters.OrderBy(i => random.Next()).First(i => !context.Someone.ContainsValue(i));
+                else
+                    id = recentPosters.OrderBy(i => random.Next()).First();
+            }
+            catch
+            {
+                return "[someone: exhausted list]";
+            }
+
+            if (parameters != null)
+                context.Someone[parameters] = id;
             return NameFromId(id);
         }
 
-        public string Var_Digit(string parameters)
+        public string Var_Digit(dynamic context, string parameters)
         {
             return random.Next(10).ToString();
         }
 
-        public string Var_Nonzero(string parameters)
+        public string Var_Nonzero(dynamic context, string parameters)
         {
             return random.Next(1, 10).ToString();
         }
 
         // Low latency version of asciidicks.com
-        public string Var_Dick(string parameters)
+        public string Var_Dick(dynamic context, string parameters)
         {
             return string.Format("8{0}D", new string('=', random.Next(1, 8)));
         }
 
-        public string Var_Tumblr(string parameters)
+        public string Var_Tumblr(dynamic context, string parameters)
         {
             if (parameters == null)
                 return null; // needs parameters
@@ -81,7 +112,7 @@ namespace discord.plugins
             { 'F', new[] { "D" } },
             { 'L', new[] { "KL" } }
         };
-        public string Var_Rofl(string parameters)
+        public string Var_Rofl(dynamic context, string parameters)
         {
             var funnyness = random.Next(4);
 

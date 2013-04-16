@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Net;
 using System.Reflection;
@@ -10,8 +11,11 @@ namespace discord.plugins
 {
     public partial class Bucket
     {
-        private readonly List<MethodInfo> handlers;
-        private readonly Dictionary<string, MethodInfo> variableHandlers;
+        private delegate bool MessageHandler(ulong sender, string message, bool mention);
+        private delegate string VariableHandler(dynamic context, string parameters);
+
+        private readonly List<MessageHandler> handlers;
+        private readonly Dictionary<string, VariableHandler> variableHandlers;
         private readonly string prefix;
 
         private readonly Random random = new Random();
@@ -41,7 +45,7 @@ namespace discord.plugins
 
                 return Tuple.Create(c, priority, name);
             }).OrderByDescending(c => c.Item2);
-            handlers = handlerFuncs.Select(c => c.Item1).ToList();
+            handlers = handlerFuncs.Select(c => (MessageHandler)Delegate.CreateDelegate(typeof(MessageHandler), this, c.Item1)).ToList();
 
             // Find variable handlers
             var variableRegex = new Regex(@"^Var_(\S+)");
@@ -52,10 +56,10 @@ namespace discord.plugins
                 return new KeyValuePair<string, MethodInfo>(name, c);
             });
 
-            variableHandlers = new Dictionary<string, MethodInfo>();
+            variableHandlers = new Dictionary<string, VariableHandler>();
             foreach (var variable in variableFuncs)
             {
-                variableHandlers.Add(variable.Key, variable.Value);
+                variableHandlers.Add(variable.Key, (VariableHandler)Delegate.CreateDelegate(typeof(VariableHandler), this, variable.Value));
             }
 
             Debug("Found Handlers: " + string.Join(", ", handlerFuncs.Select(f => f.Item3)));
@@ -68,23 +72,18 @@ namespace discord.plugins
             message = message.Trim();
 
             var mention = false;
-            if (message.StartsWith(prefix))
+            if (message.StartsWith(prefix + " "))
             {
                 mention = true;
-                message = message.Substring(prefix.Length).Trim();
+                message = message.Substring(prefix.Length + 1).Trim();
             }
 
             if (message.Length == 0)
                 return;
 
-            var parameters = new object[]
-            {
-                sender, message, mention
-            };
-
             foreach (var handler in handlers)
             {
-                if ((bool)handler.Invoke(this, parameters))
+                if (handler(sender, message, mention))
                     return;
             }
 
@@ -131,15 +130,19 @@ namespace discord.plugins
                 message = ProcessVariables(message);
 
             message = PostProcessAn(message);
+            message = message.Trim();
 
-            Output(message);
+            if (Output != null)
+                Output(message);
         }
 
         private const int MaxRecursion = 2;
-        private string ProcessVariables(string str, int recursion = 0)
+        private string ProcessVariables(string str, dynamic context = null, int recursion = 0)
         {
-            var i = 0;
+            if (context == null)
+                context = new ExpandoObject();
 
+            var i = 0;
             var sb = new StringBuilder();
 
             while (i < str.Length)
@@ -201,7 +204,7 @@ namespace discord.plugins
                 }
                 #endregion
 
-                var value = recursion < MaxRecursion ? VariableLookup(variable, parameters) : null;
+                var value = recursion < MaxRecursion ? VariableLookup(context, variable, parameters) : null;
 
                 if (value == null)
                 {
@@ -210,7 +213,7 @@ namespace discord.plugins
                 }
                 else
                 {
-                    value = ProcessVariables(value, recursion + 1);
+                    value = ProcessVariables(value, context, recursion + 1);
                 }
 
                 sb.Append(value);
@@ -226,11 +229,11 @@ namespace discord.plugins
                 DebugOutput(message);
         }
 
-        private string VariableLookup(string name, string parameters)
+        private string VariableLookup(dynamic context, string name, string parameters)
         {
-            MethodInfo handler;
+            VariableHandler handler;
             if (variableHandlers.TryGetValue(name.ToLower(), out handler))
-                return (string)handler.Invoke(this, new[] { parameters });
+                return handler(context, parameters);
             return DbHelper.GetValue(name);
         }
 
@@ -257,7 +260,7 @@ namespace discord.plugins
                 if ((w == "a" || w == "an") && i < words.Length - 1 && words[i + 1].Length > 0)
                 {
                     var useAn = "aeiouAEIOU".Contains(words[i + 1][0]);
-                    res.Append(PreserveCase(words[i], useAn ? "an" : "a") + " ");
+                    res.Append(PreserveCase(words[i], words[i + 1], useAn ? "an" : "a") + " ");
                     continue;
                 }
 
@@ -267,14 +270,22 @@ namespace discord.plugins
             return res.ToString();
         }
 
-        private static string PreserveCase(string original, string output)
+        private static string PreserveCase(string original, string other, string output)
         {
-            if (string.IsNullOrEmpty(original))
+            if (string.IsNullOrEmpty(original) || string.IsNullOrEmpty(output))
                 return output;
 
             var firstUpper = char.IsUpper(original[0]);
-            if (firstUpper && !string.IsNullOrEmpty(output))
+            var otherCaps = other.Where(char.IsLetter).All(char.IsUpper);
+            var otherLower = other.Where(char.IsLetter).All(char.IsLower);
+
+            if (firstUpper && otherLower)
                 return char.ToUpper(output[0]) + output.Substring(1);
+
+            if (otherCaps)
+                return output.ToUpper();
+            if (otherLower)
+                return output.ToLower();
 
             return output;
         }
