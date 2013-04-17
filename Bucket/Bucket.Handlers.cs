@@ -41,22 +41,7 @@ namespace discord.plugins
             if (ReservedFacts.Contains(message.ToLower()))
                 return true;
 
-            var facts = DbHelper.GetFacts(message);
-            if (facts.Count == 0)
-            {
-                if (mention)
-                {
-                    facts = DbHelper.GetFacts("don't know");
-                    if (facts.Count > 0)
-                    {
-                        SayFact(facts[random.Next(facts.Count)]);
-                    }
-                }
-                return true;
-            }
-
-            var idx = random.Next(facts.Count);
-            SayFact(facts[idx]);
+            SayFact(message, mention);
             return true;
         }
 
@@ -100,6 +85,7 @@ namespace discord.plugins
             "<reply>",
             "<action>",
             "<'s>",
+            "<alias>",
             "<web>"
         };
         private static readonly Regex VerbRule = new Regex(@"(.*?)\s*(<\S+>)\s*(.*)");
@@ -132,9 +118,9 @@ namespace discord.plugins
                 return true;
             }
 
-            var existingFacts = DbHelper.GetFacts(fact);
+            var existingFact = DbHelper.GetFact(fact);
             var protect = false;
-            if (existingFacts.Any(f => f.Protected))
+            if (existingFact != null && existingFact.Protected)
             {
                 protect = true;
                 if (!DbHelper.GetPermissions(sender).HasFlag(Permissions.Trusted))
@@ -281,7 +267,7 @@ namespace discord.plugins
             {
                 var x = DeleteXRule.Match(message).Groups[1].Value;
 
-                if (DbHelper.GetFacts(x).Count == 0)
+                if (DbHelper.GetFact(x) == null)
                 {
                     Say("That is not a fact.");
                     return true;

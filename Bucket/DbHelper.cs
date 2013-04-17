@@ -32,6 +32,13 @@ namespace discord.plugins
             cmd.ExecuteNonQuery();
         }
 
+        public static FactRow GetFact(string fact)
+        {
+            var cmd = new Command("SELECT * FROM bucket_facts WHERE fact=@fact ORDER BY RAND()");
+            cmd["@fact"] = fact.ToUtf8();
+            return cmd.Execute().Select(r => new FactRow(r)).FirstOrDefault();
+        }
+
         public static List<FactRow> GetFacts(string fact)
         {
             var cmd = new Command("SELECT * FROM bucket_facts WHERE fact=@fact");

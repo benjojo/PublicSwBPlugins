@@ -90,8 +90,37 @@ namespace discord.plugins
             Debug("No matching handler");
         }
 
+        private void SayFact(string fact, bool useUnknownResponse, bool allowAlias = true)
+        {
+            var factRow = DbHelper.GetFact(fact);
+
+            if (factRow == null)
+            {
+                if (!useUnknownResponse)
+                    return;
+
+                factRow = DbHelper.GetFact("don't know");
+                if (factRow == null)
+                {
+                    Debug("No \"don't know\" responses");
+                    return;
+                }
+            }
+
+            if (!allowAlias && factRow.Verb == "<alias>")
+            {
+                Debug("Ignored recursive alias");
+                return;
+            }
+
+            SayFact(factRow);
+        }
+
         private void SayFact(FactRow fact)
         {
+            if (fact == null)
+                return;
+
             that = fact;
 
             switch (fact.Verb)
@@ -118,9 +147,17 @@ namespace discord.plugins
                     Say(string.Format("{0}'s {1}", fact.Fact, fact.Tidbit));
                     break;
 
+                case "<alias>":
+                    SayFact(fact.Tidbit, true, false);
+                    break;
+
                 /*case "<web>":
                     Say(DownloadPage(fact.Tidbit));
                     break;*/
+
+                default:
+                    Debug("Unknown verb: " + fact.Verb);
+                    break;
             }
         }
 
