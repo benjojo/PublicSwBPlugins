@@ -46,9 +46,6 @@ namespace discord.plugins
             var userId = msg.ChatterID.ConvertToUInt64();
             var message = msg.Message;
 
-            if (IsReservedFunction(message))
-                return;
-
             if (userId == 76561198071890301)
             {
                 if (msg.Message.StartsWith("["))
@@ -64,6 +61,9 @@ namespace discord.plugins
                     message = content;
                 }
             }
+
+            if (IsReservedFunction(message))
+                return;
 
             if (Ignored.Contains(userId))
                 return;
