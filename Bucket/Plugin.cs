@@ -59,6 +59,8 @@ namespace discord.plugins
                         rohUsers[userId] = name;
 
                     message = content;
+                } else {
+                    return;
                 }
             }
 
