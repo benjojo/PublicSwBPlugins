@@ -192,8 +192,8 @@ namespace discord.plugins
 
                 i++; // skip $
 
-                // double $, print one
-                if (str[i] == '$')
+                // no text or double $, print a $
+                if (i == str.Length || str[i] == '$')
                 {
                     sb.Append(str[i++]);
                     continue;
